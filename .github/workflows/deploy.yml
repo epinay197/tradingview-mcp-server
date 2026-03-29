@@ -1,0 +1,28 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --detach
+
+      - name: Get deployment URL
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          URL=$(railway domain 2>/dev/null || echo "Check Railway dashboard for URL")
+          echo "Deployed MCP server at: $URL"
+          echo "Add to .mcp.json: {\"url\": \"https://$URL/sse\"}"
