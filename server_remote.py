@@ -8,6 +8,7 @@ import base64
 import json
 import logging
 import os
+from contextlib import asynccontextmanager
 from typing import Any
 
 import uvicorn
@@ -320,19 +321,20 @@ async def health(request: Request) -> JSONResponse:
     })
 
 
+@asynccontextmanager
+async def lifespan(app):
+    asyncio.create_task(_launch_browser())
+    yield
+
+
 app = Starlette(
+    lifespan=lifespan,
     routes=[
         Route("/health", health, methods=["GET"]),
         Route("/sse", handle_sse, methods=["GET"]),
         Mount("/messages/", app=sse.handle_post_message),
     ]
 )
-
-
-async def startup():
-    asyncio.create_task(_launch_browser())
-
-app.add_event_handler("startup", startup)
 
 
 if __name__ == "__main__":
